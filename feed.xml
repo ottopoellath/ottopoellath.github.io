@@ -1,0 +1,123 @@
+<?xml version="1.0"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>trouble shoot me</title>
+    <link>http://ottopoellath.github.io</link>
+    <atom:link href="http://ottopoellath.github.io/feed.xml" rel="self" type="application/rss+xml" />
+    <description>JBake Bootstrap Template</description>
+    <language>en-gb</language>
+    <pubDate>Mo, 27 Jul 2015 17:14:17 +0200</pubDate>
+    <lastBuildDate>Mo, 27 Jul 2015 17:14:17 +0200</lastBuildDate>
+
+    
+    <item>
+      <title>Running a three node riak cluster using a homebrew installation</title>
+      <link>http://ottopoellath.github.io/blog/running-a-three-node-riak-cluster-using-a-homebrew-installation.html</link>
+      <pubDate>So, 8 Apr 2012 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/running-a-three-node-riak-cluster-using-a-homebrew-installation.html</guid>
+      <description>
+      &lt;p&gt;If you&apos;re following &lt;a href=&quot;http://wiki.basho.com/The-Riak-Fast-Track.html&quot;&gt;The Riak Fast Track&lt;/a&gt; with a Homebrew-based riak installation, you won&apos;t be able to &lt;a href=&quot;http://wiki.basho.com/Building-a-Development-Environment.html#Use-Rebar-to-start-up-three-nodes&quot;&gt;start up the three nodes as described&lt;/a&gt; without some fiddling, because the Makefile isn&apos;t included in the Homebrew installation.&lt;/p&gt;
+&lt;!--  more --&gt;&lt;p&gt;If you already &lt;a href=&quot;/blog/2012/04/04/getting-jslint-to-run-on-a-homebrew-based-v8/&quot;&gt;installed Erlang&lt;/a&gt;, the Riak installation is as simple as &lt;code&gt;brew install riak&lt;/code&gt;.&lt;/p&gt;&lt;p&gt;To create the 4 nodes without the Makefile, you can run the following script. It makes 4 copies of our Homebrew-based Riak installation and adjusts their configuration and the hardcoded path in Riak&apos;s executable scripts:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;#!/bin/bash
+
+CWD=$(cd $(dirname $0); pwd)
+
+BASE_DIR=&amp;quot;${CWD}/dev&amp;quot;
+echo &amp;quot;Creating dev directory ${BASE_DIR}&amp;quot;
+mkdir &amp;quot;${BASE_DIR}&amp;quot;
+
+for node in 1 2 3 4; do
+  NODE_NAME=&amp;quot;dev${node}&amp;quot;
+  NODE_DIR=&amp;quot;$BASE_DIR/$NODE_NAME&amp;quot;
+
+  echo &amp;quot;Creating node ${NODE_NAME}&amp;quot;
+  cp -r $(brew --prefix riak) $NODE_DIR
+  
+  echo &amp;quot;  Removing data dir&amp;quot;
+  rm -rf &amp;quot;$NODE_DIR/libexec/data/&amp;quot;
+ 
+  HTTP=&amp;quot;809${node}&amp;quot;
+  echo &amp;quot;  Setting &amp;#39;http&amp;#39; to &amp;#39;${HTTP}&amp;#39;&amp;quot;
+  perl -p -i.bak -e &amp;#39;s/({http, \[ {&amp;quot;\d+\.\d+\.\d+\.\d+&amp;quot;, )(\d+)( } ]})/${1}&amp;#39;${HTTP}&amp;#39;${3}/g&amp;#39; &amp;quot;$NODE_DIR/libexec/etc/app.config&amp;quot; 
+  
+  HANDOFF_PORT=&amp;quot;810${node}&amp;quot;
+  echo &amp;quot;  Setting &amp;#39;handoff_port&amp;#39; to &amp;#39;${HANDOFF_PORT}&amp;#39;&amp;quot;
+  perl -p -i.bak -e &amp;#39;s/({handoff_port, )(\d+)( })/${1}&amp;#39;${HANDOFF_PORT}&amp;#39;${3}/g&amp;#39; &amp;quot;$NODE_DIR/libexec/etc/app.config&amp;quot;
+  
+  PB_PORT=&amp;quot;808${node}&amp;quot;
+  echo &amp;quot;  Setting &amp;#39;pb_port&amp;#39; to &amp;#39;${PB_PORT}&amp;#39;&amp;quot;
+  perl -p -i.bak -e &amp;#39;s/({pb_port, )(\d+)( })/${1}&amp;#39;${PB_PORT}&amp;#39;${3}/g&amp;#39; &amp;quot;$NODE_DIR/libexec/etc/app.config&amp;quot;
+  
+  NAME=&amp;quot;dev${node}&amp;quot;
+  echo &amp;quot;  Setting &amp;#39;name&amp;#39; to &amp;#39;${NAME}&amp;#39;&amp;quot;
+  perl -p -i.bak -e &amp;#39;s/(-name )(\S+)(@.*)$/${1}&amp;#39;${NAME}&amp;#39;${3}/g&amp;#39; &amp;quot;$NODE_DIR/libexec/etc/vm.args&amp;quot;
+  
+  NODE_BIN_DIR=&amp;quot;$NODE_DIR/libexec/bin&amp;quot;
+  echo &amp;quot;  Setting &amp;#39;RUNNER_SCRIPT_DIR&amp;#39; to &amp;#39;${NODE_BIN_DIR}&amp;#39;&amp;quot;
+  perl -p -i.bak -e &amp;quot;s|RUNNER_SCRIPT_DIR=.*$|RUNNER_SCRIPT_DIR=${NODE_BIN_DIR}|g&amp;quot; &amp;quot;$NODE_DIR/bin/riak&amp;quot; \
+    &amp;quot;$NODE_DIR/bin/riak-admin&amp;quot; \
+    &amp;quot;$NODE_DIR/bin/search-cmd&amp;quot; \
+    &amp;quot;$NODE_DIR/libexec/bin/riak&amp;quot; \
+    &amp;quot;$NODE_DIR/libexec/bin/riak-admin&amp;quot; \
+    &amp;quot;$NODE_DIR/libexec/bin/search-cmd&amp;quot;
+
+done
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Thanks to &lt;a href=&quot;http://stackoverflow.com/users/302916/brian-roach&quot;&gt;Brian Roach&lt;/a&gt;, who &lt;a href=&quot;http://stackoverflow.com/questions/9906386/running-a-three-node-riak-cluster-using-a-homebrew-installation/9944930#9944930&quot;&gt;told me about the hardcoded path inside the executable scripts&lt;/a&gt;.&lt;/p&gt;
+	  </description>
+    </item>
+    
+    <item>
+      <title>Getting JSLint to run on a Homebrew-based V8</title>
+      <link>http://ottopoellath.github.io/blog/getting-jslint-to-run-on-a-homebrew-based-v8.html</link>
+      <pubDate>Mi, 4 Apr 2012 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/getting-jslint-to-run-on-a-homebrew-based-v8.html</guid>
+      <description>
+      &lt;p&gt;Douglas Crockford&apos;s &lt;a href=&quot;http://www.jslint.com&quot;&gt;JSLint&lt;/a&gt; is meant to be run inside a browser. During development, I&apos;d prefer to run it via the command line, using &lt;a href=&quot;http://code.google.com/p/v8/&quot;&gt;Google&apos;s V8 JavaScript Engine&lt;/a&gt; (&lt;code&gt;brew install v8&lt;/code&gt;). &lt;/p&gt;
+&lt;!-- more --&gt;&lt;p&gt;Fortunately, the real work has already been done in &lt;a href=&quot;https://github.com/geekq/jslint-v8&quot;&gt;jslint-v8&lt;/a&gt; by &lt;a href=&quot;http://www.mobile-web-consulting.de&quot;&gt;Vladimir Dobriakov&lt;/a&gt;. We just have to figure out how to get the Rakefile to compile against our Homebrew-based V8 installation:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;$ brew install v8
+$ cd /tmp
+$ git clone git://github.com/geekq/jslint-v8.git &amp;amp;&amp;amp; cd jslint-v8
+$ V8_BASEDIR=$(brew --prefix v8) rake
+$ cp jslint ~/bin/
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;I really should make this a Homebrew formula, but I&apos;ll save that for another day.&lt;/p&gt;
+	  </description>
+    </item>
+    
+    <item>
+      <title>Installing Erlang R14B04 on Mac OS X 10.7.3. "Lion" via homebrew</title>
+      <link>http://ottopoellath.github.io/blog/installing-erlang-r14b04-on-mac-os-x-lion-via-homebrew.html</link>
+      <pubDate>Di, 27 Mär 2012 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/installing-erlang-r14b04-on-mac-os-x-lion-via-homebrew.html</guid>
+      <description>
+      &lt;p&gt;While &lt;code&gt;brew install erlang&lt;/code&gt; sounds easy enough, it won&apos;t give us what we need for 2 reasons:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;It will install Erlang R15B instead of R14B04 (&lt;code&gt;brew info erlang&lt;/code&gt; tells us the latest version available via &lt;a href=&quot;http://mxcl.github.com/homebrew/&quot;&gt;Homebrew&lt;/a&gt; is R15B).&lt;/li&gt;
+  &lt;li&gt;Erlang won&apos;t compile unless you use GCC, which isn&apos;t available in Lion or the current version of Xcode (4.3.2).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;!-- more --&gt;&lt;p&gt;To tackle the first problem, let&apos;s find out which versions of Erlang are available:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;$ brew versions erlang
+R15B     git checkout 12b8d77 /usr/local/Library/Formula/erlang.rb
+R14B04   git checkout 8560672 /usr/local/Library/Formula/erlang.rb
+R14B03   git checkout 9332ca9 /usr/local/Library/Formula/erlang.rb
+R14B02   git checkout b782d9d /usr/local/Library/Formula/erlang.rb
+...
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;In order to select R14B04, we just need to execute the provided command:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;$ cd $(brew --prefix)
+$ git checkout 8560672 /usr/local/Library/Formula/erlang.rb
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;(In case &lt;code&gt;brew&lt;/code&gt; complains about a missing &lt;code&gt;git&lt;/code&gt; repository, just run &lt;code&gt;brew update&lt;/code&gt; and try again. This should only happen with new &lt;code&gt;brew&lt;/code&gt; installations.)&lt;/p&gt;&lt;p&gt;&lt;code&gt;brew info erlang&lt;/code&gt; should now list R14B04 as the selected version, but trying to install via &lt;code&gt;brew install erlang&lt;/code&gt; will fail with compiler errors. The solution is to instruct &lt;code&gt;brew&lt;/code&gt; to use &lt;code&gt;gcc&lt;/code&gt; for compilation (instead of &lt;code&gt;llvm-gcc&lt;/code&gt; or &lt;code&gt;clang&lt;/code&gt;).&lt;br/&gt;Unfortunately, &lt;code&gt;gcc&lt;/code&gt; isn&apos;t available in Lion &lt;em&gt;or&lt;/em&gt; the standard Homebrew formula repository. We therefore have to install it from Homebrew&apos;s dupes repository:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;$ brew install https://raw.github.com/Homebrew/homebrew-dupes/master/apple-gcc42.rb
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Now it&apos;s time to actually install Erlang using &lt;code&gt;gcc&lt;/code&gt; (this may take a while):&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;$ brew -v install --use-gcc erlang
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;If all goes well, the Erlang shell should now work and show us it&apos;s running on Erlang R14B04:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;$ erl
+Erlang R14B04 (erts-5.8.5) [source] [64-bit] [smp:4:4] [rq:4] [async-threads:0] [hipe] [kernel-poll:false]
+...
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Finally, we can now go on to install &lt;a href=&quot;https://github.com/basho/rebar/wiki&quot;&gt;Rebar&lt;/a&gt;, an Erlang build tool. We need to provide the &lt;code&gt;--HEAD&lt;/code&gt; option, since Rebar &quot;is a head-only formula&quot; (fortunately, &lt;code&gt;brew&lt;/code&gt; is smart enough to tell you what to do about that in case you forgot):&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;bash&quot;&gt;$ brew -v install --HEAD rebar
+&lt;/code&gt;&lt;/pre&gt;
+	  </description>
+    </item>
+    
+
+  </channel> 
+</rss>

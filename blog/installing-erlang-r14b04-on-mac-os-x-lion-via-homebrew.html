@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>Installing Erlang R14B04 on Mac OS X 10.7.3. "Lion" via homebrew</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <meta name="keywords" content="">
+    <meta name="generator" content="JBake">
+
+    <!-- Le styles -->
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/asciidoctor.css" rel="stylesheet">
+    <link href="../css/base.css" rel="stylesheet">
+    <link href="../css/prettify.css" rel="stylesheet">
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+
+    <!-- Fav and touch icons -->
+    <!--<link rel="apple-touch-icon-precomposed" sizes="144x144" href="../assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="../assets/ico/apple-touch-icon-57-precomposed.png">-->
+    <link rel="shortcut icon" href="../favicon.ico">
+
+    <link rel="stylesheet" href="http://yandex.st/highlightjs/7.3/styles/default.min.css">
+    <script src="http://yandex.st/highlightjs/7.3/highlight.min.js"></script>
+  </head>
+  <body onload="prettyPrint()">
+    <div id="wrap">
+   
+	
+		<!-- Fixed navbar -->
+    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../">trouble shoot me</a>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+	
+	<div class="page-header">
+		<h1>Installing Erlang R14B04 on Mac OS X 10.7.3. "Lion" via homebrew</h1>
+	</div>
+
+	<p><em>27 März 2012</em></p>
+
+	<p><p>While <code>brew install erlang</code> sounds easy enough, it won't give us what we need for 2 reasons:</p>
+<ul>
+  <li>It will install Erlang R15B instead of R14B04 (<code>brew info erlang</code> tells us the latest version available via <a href="http://mxcl.github.com/homebrew/">Homebrew</a> is R15B).</li>
+  <li>Erlang won't compile unless you use GCC, which isn't available in Lion or the current version of Xcode (4.3.2).</li>
+</ul>
+<!-- more --><p>To tackle the first problem, let's find out which versions of Erlang are available:</p>
+<pre><code class="bash">$ brew versions erlang
+R15B     git checkout 12b8d77 /usr/local/Library/Formula/erlang.rb
+R14B04   git checkout 8560672 /usr/local/Library/Formula/erlang.rb
+R14B03   git checkout 9332ca9 /usr/local/Library/Formula/erlang.rb
+R14B02   git checkout b782d9d /usr/local/Library/Formula/erlang.rb
+...
+</code></pre><p>In order to select R14B04, we just need to execute the provided command:</p>
+<pre><code class="bash">$ cd $(brew --prefix)
+$ git checkout 8560672 /usr/local/Library/Formula/erlang.rb
+</code></pre><p>(In case <code>brew</code> complains about a missing <code>git</code> repository, just run <code>brew update</code> and try again. This should only happen with new <code>brew</code> installations.)</p><p><code>brew info erlang</code> should now list R14B04 as the selected version, but trying to install via <code>brew install erlang</code> will fail with compiler errors. The solution is to instruct <code>brew</code> to use <code>gcc</code> for compilation (instead of <code>llvm-gcc</code> or <code>clang</code>).<br/>Unfortunately, <code>gcc</code> isn't available in Lion <em>or</em> the standard Homebrew formula repository. We therefore have to install it from Homebrew's dupes repository:</p>
+<pre><code class="bash">$ brew install https://raw.github.com/Homebrew/homebrew-dupes/master/apple-gcc42.rb
+</code></pre><p>Now it's time to actually install Erlang using <code>gcc</code> (this may take a while):</p>
+<pre><code class="bash">$ brew -v install --use-gcc erlang
+</code></pre><p>If all goes well, the Erlang shell should now work and show us it's running on Erlang R14B04:</p>
+<pre><code class="bash">$ erl
+Erlang R14B04 (erts-5.8.5) [source] [64-bit] [smp:4:4] [rq:4] [async-threads:0] [hipe] [kernel-poll:false]
+...
+</code></pre><p>Finally, we can now go on to install <a href="https://github.com/basho/rebar/wiki">Rebar</a>, an Erlang build tool. We need to provide the <code>--HEAD</code> option, since Rebar "is a head-only formula" (fortunately, <code>brew</code> is smart enough to tell you what to do about that in case you forgot):</p>
+<pre><code class="bash">$ brew -v install --HEAD rebar
+</code></pre></p>
+
+	<hr />
+	
+		</div>
+		<div id="push"></div>
+    </div>
+    
+    <div id="footer">
+      <div class="container">
+        <p class="muted credit">
+          <a href="../archive.html">Archive</a> |
+          <a href="../feed.xml">Feed</a>
+        </p>
+      </div>
+    </div>
+    
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="../js/jquery-1.11.1.min.js"></script>
+    <script src="../js/bootstrap.min.js"></script>
+    <script src="../js/prettify.js"></script>
+
+    <script type="text/javascript">
+      $(function() {
+        hljs.tabReplace = '  '; //4 spaces
+        hljs.initHighlighting();
+      });
+    </script>
+  </body>
+</html>

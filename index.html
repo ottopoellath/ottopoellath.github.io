@@ -1,1 +1,174 @@
-Hello
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>trouble shoot me</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <meta name="keywords" content="">
+    <meta name="generator" content="JBake">
+
+    <!-- Le styles -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/asciidoctor.css" rel="stylesheet">
+    <link href="css/base.css" rel="stylesheet">
+    <link href="css/prettify.css" rel="stylesheet">
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+
+    <!-- Fav and touch icons -->
+    <!--<link rel="apple-touch-icon-precomposed" sizes="144x144" href="../assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="../assets/ico/apple-touch-icon-57-precomposed.png">-->
+    <link rel="shortcut icon" href="favicon.ico">
+
+    <link rel="stylesheet" href="http://yandex.st/highlightjs/7.3/styles/default.min.css">
+    <script src="http://yandex.st/highlightjs/7.3/highlight.min.js"></script>
+  </head>
+  <body onload="prettyPrint()">
+    <div id="wrap">
+   
+
+		<!-- Fixed navbar -->
+    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="/">trouble shoot me</a>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+
+	
+		<a href="blog/running-a-three-node-riak-cluster-using-a-homebrew-installation.html"><h1>Running a three node riak cluster using a homebrew installation</h1></a>
+		<p>08 April 2012</p>
+		<p><p>If you're following <a href="http://wiki.basho.com/The-Riak-Fast-Track.html">The Riak Fast Track</a> with a Homebrew-based riak installation, you won't be able to <a href="http://wiki.basho.com/Building-a-Development-Environment.html#Use-Rebar-to-start-up-three-nodes">start up the three nodes as described</a> without some fiddling, because the Makefile isn't included in the Homebrew installation.</p>
+<!--  more --><p>If you already <a href="/blog/2012/04/04/getting-jslint-to-run-on-a-homebrew-based-v8/">installed Erlang</a>, the Riak installation is as simple as <code>brew install riak</code>.</p><p>To create the 4 nodes without the Makefile, you can run the following script. It makes 4 copies of our Homebrew-based Riak installation and adjusts their configuration and the hardcoded path in Riak's executable scripts:</p>
+<pre><code class="bash">#!/bin/bash
+
+CWD=$(cd $(dirname $0); pwd)
+
+BASE_DIR=&quot;${CWD}/dev&quot;
+echo &quot;Creating dev directory ${BASE_DIR}&quot;
+mkdir &quot;${BASE_DIR}&quot;
+
+for node in 1 2 3 4; do
+  NODE_NAME=&quot;dev${node}&quot;
+  NODE_DIR=&quot;$BASE_DIR/$NODE_NAME&quot;
+
+  echo &quot;Creating node ${NODE_NAME}&quot;
+  cp -r $(brew --prefix riak) $NODE_DIR
+  
+  echo &quot;  Removing data dir&quot;
+  rm -rf &quot;$NODE_DIR/libexec/data/&quot;
+ 
+  HTTP=&quot;809${node}&quot;
+  echo &quot;  Setting &#39;http&#39; to &#39;${HTTP}&#39;&quot;
+  perl -p -i.bak -e &#39;s/({http, \[ {&quot;\d+\.\d+\.\d+\.\d+&quot;, )(\d+)( } ]})/${1}&#39;${HTTP}&#39;${3}/g&#39; &quot;$NODE_DIR/libexec/etc/app.config&quot; 
+  
+  HANDOFF_PORT=&quot;810${node}&quot;
+  echo &quot;  Setting &#39;handoff_port&#39; to &#39;${HANDOFF_PORT}&#39;&quot;
+  perl -p -i.bak -e &#39;s/({handoff_port, )(\d+)( })/${1}&#39;${HANDOFF_PORT}&#39;${3}/g&#39; &quot;$NODE_DIR/libexec/etc/app.config&quot;
+  
+  PB_PORT=&quot;808${node}&quot;
+  echo &quot;  Setting &#39;pb_port&#39; to &#39;${PB_PORT}&#39;&quot;
+  perl -p -i.bak -e &#39;s/({pb_port, )(\d+)( })/${1}&#39;${PB_PORT}&#39;${3}/g&#39; &quot;$NODE_DIR/libexec/etc/app.config&quot;
+  
+  NAME=&quot;dev${node}&quot;
+  echo &quot;  Setting &#39;name&#39; to &#39;${NAME}&#39;&quot;
+  perl -p -i.bak -e &#39;s/(-name )(\S+)(@.*)$/${1}&#39;${NAME}&#39;${3}/g&#39; &quot;$NODE_DIR/libexec/etc/vm.args&quot;
+  
+  NODE_BIN_DIR=&quot;$NODE_DIR/libexec/bin&quot;
+  echo &quot;  Setting &#39;RUNNER_SCRIPT_DIR&#39; to &#39;${NODE_BIN_DIR}&#39;&quot;
+  perl -p -i.bak -e &quot;s|RUNNER_SCRIPT_DIR=.*$|RUNNER_SCRIPT_DIR=${NODE_BIN_DIR}|g&quot; &quot;$NODE_DIR/bin/riak&quot; \
+    &quot;$NODE_DIR/bin/riak-admin&quot; \
+    &quot;$NODE_DIR/bin/search-cmd&quot; \
+    &quot;$NODE_DIR/libexec/bin/riak&quot; \
+    &quot;$NODE_DIR/libexec/bin/riak-admin&quot; \
+    &quot;$NODE_DIR/libexec/bin/search-cmd&quot;
+
+done
+</code></pre><p>Thanks to <a href="http://stackoverflow.com/users/302916/brian-roach">Brian Roach</a>, who <a href="http://stackoverflow.com/questions/9906386/running-a-three-node-riak-cluster-using-a-homebrew-installation/9944930#9944930">told me about the hardcoded path inside the executable scripts</a>.</p></p>
+  	
+		<a href="blog/getting-jslint-to-run-on-a-homebrew-based-v8.html"><h1>Getting JSLint to run on a Homebrew-based V8</h1></a>
+		<p>04 April 2012</p>
+		<p><p>Douglas Crockford's <a href="http://www.jslint.com">JSLint</a> is meant to be run inside a browser. During development, I'd prefer to run it via the command line, using <a href="http://code.google.com/p/v8/">Google's V8 JavaScript Engine</a> (<code>brew install v8</code>). </p>
+<!-- more --><p>Fortunately, the real work has already been done in <a href="https://github.com/geekq/jslint-v8">jslint-v8</a> by <a href="http://www.mobile-web-consulting.de">Vladimir Dobriakov</a>. We just have to figure out how to get the Rakefile to compile against our Homebrew-based V8 installation:</p>
+<pre><code class="bash">$ brew install v8
+$ cd /tmp
+$ git clone git://github.com/geekq/jslint-v8.git &amp;&amp; cd jslint-v8
+$ V8_BASEDIR=$(brew --prefix v8) rake
+$ cp jslint ~/bin/
+</code></pre><p>I really should make this a Homebrew formula, but I'll save that for another day.</p></p>
+  	
+		<a href="blog/installing-erlang-r14b04-on-mac-os-x-lion-via-homebrew.html"><h1>Installing Erlang R14B04 on Mac OS X 10.7.3. "Lion" via homebrew</h1></a>
+		<p>27 März 2012</p>
+		<p><p>While <code>brew install erlang</code> sounds easy enough, it won't give us what we need for 2 reasons:</p>
+<ul>
+  <li>It will install Erlang R15B instead of R14B04 (<code>brew info erlang</code> tells us the latest version available via <a href="http://mxcl.github.com/homebrew/">Homebrew</a> is R15B).</li>
+  <li>Erlang won't compile unless you use GCC, which isn't available in Lion or the current version of Xcode (4.3.2).</li>
+</ul>
+<!-- more --><p>To tackle the first problem, let's find out which versions of Erlang are available:</p>
+<pre><code class="bash">$ brew versions erlang
+R15B     git checkout 12b8d77 /usr/local/Library/Formula/erlang.rb
+R14B04   git checkout 8560672 /usr/local/Library/Formula/erlang.rb
+R14B03   git checkout 9332ca9 /usr/local/Library/Formula/erlang.rb
+R14B02   git checkout b782d9d /usr/local/Library/Formula/erlang.rb
+...
+</code></pre><p>In order to select R14B04, we just need to execute the provided command:</p>
+<pre><code class="bash">$ cd $(brew --prefix)
+$ git checkout 8560672 /usr/local/Library/Formula/erlang.rb
+</code></pre><p>(In case <code>brew</code> complains about a missing <code>git</code> repository, just run <code>brew update</code> and try again. This should only happen with new <code>brew</code> installations.)</p><p><code>brew info erlang</code> should now list R14B04 as the selected version, but trying to install via <code>brew install erlang</code> will fail with compiler errors. The solution is to instruct <code>brew</code> to use <code>gcc</code> for compilation (instead of <code>llvm-gcc</code> or <code>clang</code>).<br/>Unfortunately, <code>gcc</code> isn't available in Lion <em>or</em> the standard Homebrew formula repository. We therefore have to install it from Homebrew's dupes repository:</p>
+<pre><code class="bash">$ brew install https://raw.github.com/Homebrew/homebrew-dupes/master/apple-gcc42.rb
+</code></pre><p>Now it's time to actually install Erlang using <code>gcc</code> (this may take a while):</p>
+<pre><code class="bash">$ brew -v install --use-gcc erlang
+</code></pre><p>If all goes well, the Erlang shell should now work and show us it's running on Erlang R14B04:</p>
+<pre><code class="bash">$ erl
+Erlang R14B04 (erts-5.8.5) [source] [64-bit] [smp:4:4] [rq:4] [async-threads:0] [hipe] [kernel-poll:false]
+...
+</code></pre><p>Finally, we can now go on to install <a href="https://github.com/basho/rebar/wiki">Rebar</a>, an Erlang build tool. We need to provide the <code>--HEAD</code> option, since Rebar "is a head-only formula" (fortunately, <code>brew</code> is smart enough to tell you what to do about that in case you forgot):</p>
+<pre><code class="bash">$ brew -v install --HEAD rebar
+</code></pre></p>
+  	
+	
+	<hr />
+	
+		</div>
+		<div id="push"></div>
+    </div>
+    
+    <div id="footer">
+      <div class="container">
+        <p class="muted credit">
+          <a href="archive.html">Archive</a> |
+          <a href="feed.xml">Feed</a>
+        </p>
+      </div>
+    </div>
+    
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="js/jquery-1.11.1.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/prettify.js"></script>
+
+    <script type="text/javascript">
+      $(function() {
+        hljs.tabReplace = '  '; //4 spaces
+        hljs.initHighlighting();
+      });
+    </script>
+  </body>
+</html>
