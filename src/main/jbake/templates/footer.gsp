@@ -1,9 +1,17 @@
 		</div>
 		<div id="push"></div>
     </div>
+
+    <div id="disqus_thread"></div>
     
     <div id="footer">
       <div class="container">
+        <p class="muted credit">
+          All posts on this blog are published with a <em>Creative Commons by-nc-sa</em> license.
+          <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/2.0/">
+            <img alt="Creative Commons License" style="border-width:0" src="https://licensebuttons.net/l/by-nc-sa/2.0/88x31.png">
+          </a>
+        </p>
         <p class="muted credit">
           <a href="<%if (content.rootpath) {%>${content.rootpath}<% } else { %><% }%>${config.archive_file}">Archive</a> |
           <a href="<%if (content.rootpath) {%>${content.rootpath}<% } else { %><% }%>${config.feed_file}">Feed</a>
