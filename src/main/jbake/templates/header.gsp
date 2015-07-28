@@ -1,3 +1,4 @@
+<% Locale.setDefault(Locale.US) %>
 <!DOCTYPE html>
 <html lang="en">
   <head>
