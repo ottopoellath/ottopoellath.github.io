@@ -3,17 +3,6 @@
     </div>
 
 
-    <div id="footer">
-      <div class="container">
-        <p class="muted credit">
-          All posts on this blog are published with a <em>Creative Commons by-nc-sa</em> license.
-          <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/2.0/">
-            <img alt="Creative Commons License" style="border-width:0" src="https://licensebuttons.net/l/by-nc-sa/2.0/88x31.png">
-          </a>
-        </p>
-      </div>
-    </div>
-    <p></p>
     
     <!-- Le javascript
     ================================================== -->
