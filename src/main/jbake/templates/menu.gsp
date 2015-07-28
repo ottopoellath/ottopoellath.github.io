@@ -10,6 +10,14 @@
           </button>
           <a class="navbar-brand" href="<%if (content.rootpath) {%>${content.rootpath}<% } else { %>/<% }%>">${config.site_title}</a>
         </div>
+
+        <div class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li><a href="<%if (content.rootpath) {%>${content.rootpath}<% } else { %><% }%>${config.archive_file}">Archive</a></li>
+            <li><a href="<%if (content.rootpath) {%>${content.rootpath}<% } else { %><% }%>${config.feed_file}">Feed</a></li>
+          </ul>
+        </div><!--/.nav-collapse -->
+
       </div>
     </div>
     <div class="container">

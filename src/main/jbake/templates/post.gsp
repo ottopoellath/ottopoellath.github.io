@@ -13,3 +13,5 @@
 	<hr />
 	
 <%include "footer.gsp"%>
+
+<div class="container" id="disqus_thread"></div>
